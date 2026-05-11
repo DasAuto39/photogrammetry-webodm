@@ -50,6 +50,42 @@ sudo apt update
 sudo apt install jq -y
 ```
 
+## Docker - NodeODM Setup (Opsional)
+
+Jika Anda ingin menggunakan WebODM dengan NodeODM di dalam Docker, gunakan image Docker resmi dari OpenDroneMap:
+
+**Dokumentasi**: https://hub.docker.com/r/opendronemap/nodeodm
+
+### Quick Start dengan Docker
+
+Pull dan jalankan NodeODM dari Docker Hub:
+
+```bash
+docker run -p 3000:3000 opendronemap/nodeodm
+```
+
+Kemudian buka browser ke `http://localhost:3000`
+
+### Dengan Volume External (untuk menyimpan hasil di drive eksternal)
+
+```bash
+docker run -p 3000:3000 -v /mnt/external_hd:/var/www/data opendronemap/nodeodm
+```
+
+### Dengan GPU Acceleration (untuk NVIDIA GPU)
+
+Jika Anda memiliki GPU NVIDIA, gunakan image GPU:
+
+```bash
+docker run -p 3000:3000 --gpus all opendronemap/nodeodm:gpu
+```
+
+Pastikan Anda sudah menginstall `nvidia-docker` sebelumnya. Lihat: https://github.com/NVIDIA/nvidia-docker
+
+### Catatan CPU Requirements
+
+Docker images memerlukan CPU 64-bit dengan dukungan MMX, SSE, SSE2, SSE3, dan SSSE3. CPU yang terlalu lama tidak akan kompatibel.
+
 Rekomendasi:
 
 - Gunakan `./run_odm.sh` kecuali Anda tahu perlu menjalankan atau memodifikasi `odm.py` langsung. Skrip shell akan mengurangi langkah manual dan mengurangi kemungkinan kesalahan konfigurasi.
