@@ -14,6 +14,11 @@ Terdapat dua cara untuk menjalankan proyek ini:
 - Perintah: `python3 odm.py`
 - Keterangan: Menjalankan skrip Python utama secara langsung. Gunakan cara ini bila Anda perlu men-debug atau memodifikasi `odm.py`.
 
+3. Menjalankan `ur.py` secara terpisah (capture via ESP32 + kamera)
+
+- Perintah: `python3 ur.py`
+- Keterangan: `ur.py` digunakan untuk kontrol relay/input ESP32 dan pengambilan gambar kamera (OpenCV), terpisah dari alur `odm.py`.
+
 Prasyarat singkat:
 
 - Python 3.x terpasang untuk menjalankan `odm.py`.
@@ -32,6 +37,13 @@ Dependencies (Python & sistem)
 	- `pyodm` (client untuk berinteraksi dengan WebODM/Node)
 	- modul bawaan Python: `os`, `pathlib`
 
+- Dependensi Python untuk `ur.py`:
+	- `requests`
+	- `requests-toolbelt`
+	- `opencv-python`
+	- `piexif`
+	- modul bawaan Python: `time`, `os`, `json`, `random`
+
 - Jika Anda ingin mengelola dependensi Python, gunakan virtual environment (`venv`) agar paket terisolasi dari sistem:
 
 ```bash
@@ -39,9 +51,20 @@ Dependencies (Python & sistem)
 python3 -m venv venv
 source venv/bin/activate
 
-# Instal dependensi (opsional: buat file requirements.txt berisi 'pyodm')
+# Instal dependensi untuk odm.py
 pip install pyodm
+
+# Instal dependensi untuk ur.py (terpisah)
+pip install requests requests-toolbelt opencv-python piexif
+
+# Atau instal semua sekaligus
+pip install pyodm requests requests-toolbelt opencv-python piexif
 ```
+
+Catatan untuk `ur.py`:
+
+- Pastikan nilai `ESP32_IP` di [ur.py](ur.py) sesuai IP perangkat ESP32 Anda.
+- Di Linux, jika OpenCV gagal membuka kamera, pastikan device kamera terdeteksi (mis. `/dev/video*`) dan user punya izin akses.
 
 - Jika Anda menggunakan cara CLI (`run_odm.sh`) dan memerlukan utilitas sistem seperti `jq`, jalankan:
 

@@ -19,7 +19,7 @@ ODM_OPTIONS='[
   {"name":"use-3dmesh","value":true},
   {"name":"pc-quality","value":"medium"},
   {"name":"ignore-gsd","value":true},
-  {"name":"bg-removal","value":true}
+  {"name":"bg-removal","value":false}
 ]'
 
 # ============================================================================
