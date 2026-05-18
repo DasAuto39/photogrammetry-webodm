@@ -1,4 +1,5 @@
 .vscode/
 output/
+datasets/
 .last_task_uuid
 sfm_dataset/
