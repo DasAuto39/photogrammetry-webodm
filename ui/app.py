@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Flask, abort, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, render_template, request, send_file, send_from_directory
 from flask_cors import CORS
 import glob
 import os
@@ -27,7 +27,7 @@ app = Flask(__name__, template_folder="templates")
 CORS(app)
 
 # ======================
-# STATE MANAGEMENT
+# STATE
 # ======================
 STATE_LOCK = threading.Lock()
 STATE = {
@@ -92,10 +92,8 @@ def find_models():
     for p in patterns:
         for m in sorted(glob.glob(p)):
             path = Path(m)
-            if not path.is_file():
-                continue
-
             rel = safe_rel(path)
+
             if rel in seen:
                 continue
             seen.add(rel)
@@ -103,14 +101,61 @@ def find_models():
             models.append({
                 "name": path.name,
                 "path": rel,
-                "task": path.parents[1].name if len(path.parents) > 1 else "unknown"
+                "task": path.parents[1].name
             })
 
     return models
 
 
 # ======================
-# PROCESS RUNNER
+# FILE SERVER (IMPORTANT FIX)
+# ======================
+@app.route("/api/files/<path:filename>")
+def serve_files(filename):
+    return send_from_directory(PROJECT_ROOT, filename)
+
+
+@app.route("/api/model")
+def api_model():
+    path = request.args.get("path", "")
+    if not path:
+        abort(400)
+
+    requested = (PROJECT_ROOT / path).resolve()
+
+    if PROJECT_ROOT not in requested.parents:
+        abort(403)
+
+    if not requested.exists():
+        abort(404)
+
+    return send_file(requested)
+
+
+# ======================
+# MODELS API
+# ======================
+@app.route("/api/models")
+def api_models():
+    return jsonify(find_models())
+
+
+# ======================
+# STATUS
+# ======================
+@app.route("/api/status")
+def status():
+    snap = snapshot()
+
+    for s in ["robot", "odm", "pipeline"]:
+        log = snap[s].get("log")
+        snap[s]["tail"] = tail_file(PROJECT_ROOT / log) if log else ""
+
+    return jsonify(snap)
+
+
+# ======================
+# PROCESS LAUNCHER
 # ======================
 def launch_process(section, label, cmd, cwd, log_path: Path):
     log_file = log_path.open("a", buffering=1, encoding="utf-8")
@@ -146,84 +191,45 @@ def run_pipeline():
 
     set_state("pipeline", status="running", message="Running robot", log=safe_rel(pipe_log))
 
-    try:
-        # ROBOT
-        robot = launch_process(
-            "robot",
-            "Robot",
-            ["python3", str(PROJECT_ROOT / "ur.py")],
-            PROJECT_ROOT,
-            robot_log
-        )
+    robot = launch_process(
+        "robot",
+        "Robot",
+        ["python3", str(PROJECT_ROOT / "ur.py")],
+        PROJECT_ROOT,
+        robot_log
+    )
 
-        rc = robot.wait()
-        set_state("robot", status="finished" if rc == 0 else "failed", returncode=rc)
+    rc = robot.wait()
+    set_state("robot", status="finished" if rc == 0 else "failed", returncode=rc)
 
-        if rc != 0:
-            set_state("pipeline", status="failed", message="Robot failed")
-            return
+    if rc != 0:
+        set_state("pipeline", status="failed", message="Robot failed")
+        return
 
-        # ODM
-        set_state("pipeline", status="running", message="Running ODM")
+    set_state("pipeline", status="running", message="Running ODM")
 
-        odm = launch_process(
-            "odm",
-            "ODM",
-            ["bash", str(PROJECT_ROOT / "run_odm.sh"), str(DATASETS_DIR)],
-            PROJECT_ROOT,
-            odm_log
-        )
+    odm = launch_process(
+        "odm",
+        "ODM",
+        ["bash", str(PROJECT_ROOT / "run_odm.sh"), str(DATASETS_DIR)],
+        PROJECT_ROOT,
+        odm_log
+    )
 
-        rc2 = odm.wait()
-        set_state("odm", status="finished" if rc2 == 0 else "failed", returncode=rc2)
+    rc2 = odm.wait()
+    set_state("odm", status="finished" if rc2 == 0 else "failed", returncode=rc2)
 
-        if rc2 == 0:
-            set_state("pipeline", status="completed", message="Done")
-        else:
-            set_state("pipeline", status="failed", message="ODM failed")
-
-    except Exception as e:
-        set_state("pipeline", status="failed", message=str(e))
-        set_state("robot", status="failed")
-        set_state("odm", status="failed")
+    if rc2 == 0:
+        set_state("pipeline", status="completed", message="Done")
+    else:
+        set_state("pipeline", status="failed", message="ODM failed")
 
 
 # ======================
-# ROUTES
+# ROUTES CONTROL
 # ======================
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@app.route("/api/models")
-def api_models():
-    return jsonify(find_models())
-
-
-@app.route("/api/model")
-def api_model():
-    path = request.args.get("path", "")
-    if not path:
-        abort(400)
-
-    requested = (PROJECT_ROOT / path).resolve()
-
-    if PROJECT_ROOT not in requested.parents:
-        abort(403)
-
-    if not requested.exists():
-        abort(404)
-
-    return send_file(requested)
-
-
 @app.route("/api/start_robot", methods=["POST"])
 def start_robot():
-    with STATE_LOCK:
-        if STATE["robot"]["status"] == "running":
-            return jsonify({"status": "already_running"}), 409
-
     log_path = LOG_DIR / f"robot_{now_tag()}.log"
 
     launch_process(
@@ -239,10 +245,6 @@ def start_robot():
 
 @app.route("/api/start_odm", methods=["POST"])
 def start_odm():
-    with STATE_LOCK:
-        if STATE["odm"]["status"] == "running":
-            return jsonify({"status": "already_running"}), 409
-
     log_path = LOG_DIR / f"odm_{now_tag()}.log"
 
     launch_process(
@@ -262,55 +264,36 @@ def run_all():
         if STATE["pipeline"]["status"] == "running":
             return jsonify({"status": "already_running"}), 409
 
-        STATE["robot"].update({"status": "idle", "pid": None})
-        STATE["odm"].update({"status": "idle", "pid": None})
-
     threading.Thread(target=run_pipeline, daemon=True).start()
-
     return jsonify({"status": "started"})
-
-
-@app.route("/api/status")
-def status():
-    snap = snapshot()
-
-    for s in ["robot", "odm", "pipeline"]:
-        log = snap[s].get("log")
-        if log:
-            snap[s]["tail"] = tail_file(PROJECT_ROOT / log)
-        else:
-            snap[s]["tail"] = ""
-
-    return jsonify(snap)
 
 
 @app.route("/api/stop_all", methods=["POST"])
 def stop_all():
-    killed = []
-
     with STATE_LOCK:
-        pids = [
-            STATE["robot"].get("pid"),
-            STATE["odm"].get("pid"),
-        ]
+        pids = [STATE["robot"]["pid"], STATE["odm"]["pid"]]
 
     for pid in pids:
         if pid:
             try:
                 subprocess.run(["kill", str(pid)])
-                killed.append(pid)
-            except Exception:
+            except:
                 pass
 
     set_state("robot", status="idle", pid=None)
     set_state("odm", status="idle", pid=None)
     set_state("pipeline", status="idle", message="stopped")
 
-    return jsonify({"status": "stopped", "killed": killed})
+    return jsonify({"status": "stopped"})
 
 
 # ======================
-# RUN
+# MAIN
 # ======================
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

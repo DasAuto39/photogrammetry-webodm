@@ -275,6 +275,7 @@
     import { OrbitControls } from 'https://unpkg.com/three@0.150.1/examples/jsm/controls/OrbitControls.js';
     import { OBJLoader } from 'https://unpkg.com/three@0.150.1/examples/jsm/loaders/OBJLoader.js';
     import { GLTFLoader } from 'https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js';
+    import { MTLLoader } from 'https://unpkg.com/three@0.150.1/examples/jsm/loaders/MTLLoader.js';
 
     // expose to window for compatibility with existing code that may expect globals
     window.THREE = THREE;
@@ -394,29 +395,41 @@
 
       const lower = path.toLowerCase();
       if (lower.endsWith('.obj')) {
-          const loader = new OBJLoader();
-        loader.load(`/api/model?path=${encodeURIComponent(path)}`, obj => {
-          currentModel = obj;
-          scene.add(obj);
-          const box = new THREE.Box3().setFromObject(obj);
-          const size = box.getSize(new THREE.Vector3()).length();
-          const center = box.getCenter(new THREE.Vector3());
-          obj.position.sub(center);
-          camera.position.set(0, 0, Math.max(size * 1.5, 5));
-          controls.target.set(0, 0, 0);
-          controls.update();
-          setLoading(false);
-        }, xhr => {
-          if (xhr.lengthComputable) {
-            setProgress(Math.round((xhr.loaded / xhr.total) * 100));
-          }
-        }, err => {
-          console.error(err);
-          setLoading(false);
-          alert('Gagal load model');
+
+        const baseFolder = path.substring(0, path.lastIndexOf('/'));
+
+        const mtlLoader = new MTLLoader();
+        mtlLoader.setPath(`/api/files/${baseFolder}/`);
+
+        const objName = path.split('/').pop().replace('.obj', '.mtl');
+
+        mtlLoader.load(objName, (materials) => {
+
+            materials.preload();
+
+            const objLoader = new OBJLoader();
+            objLoader.setMaterials(materials);
+
+            objLoader.load(`/api/model?path=${encodeURIComponent(path)}`, (obj) => {
+
+            currentModel = obj;
+            scene.add(obj);
+
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = box.getSize(new THREE.Vector3()).length();
+            const center = box.getCenter(new THREE.Vector3());
+
+            obj.position.sub(center);
+            camera.position.set(0, 0, Math.max(size * 1.5, 5));
+
+            controls.update();
+            setLoading(false);
+
+            });
+
         });
-        return;
-      }
+
+        }
 
       if (lower.endsWith('.glb') || lower.endsWith('.gltf')) {
         const loader = new GLTFLoader();
