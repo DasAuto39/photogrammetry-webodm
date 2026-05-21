@@ -4,3 +4,5 @@ datasets/
 .last_task_uuid
 sfm_dataset/
 venv/
+.venv/
+__pycache__/
