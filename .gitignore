@@ -5,4 +5,5 @@ datasets/
 sfm_dataset/
 venv/
 .venv/
+.env
 __pycache__/
