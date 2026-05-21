@@ -30,5 +30,5 @@ Have docker installed
     ```
     and run it
     ```bash
-    docker-compose up -d --build
+    docker-compose up -d
     ```
