@@ -1,0 +1,27 @@
+# Git
+.git
+.gitignore
+
+# Environment & Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Lingkungan & Konfigurasi
+.env
+.flaskenv
+.vscode/
+.idea/
+
+# File log & database lokal
+*.log
+*.sqlite3
+*.db
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
