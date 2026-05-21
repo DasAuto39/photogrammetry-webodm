@@ -1,6 +1,6 @@
 # Requirements
-1. Have docker installed
-2. 
+Have docker installed
+
 # Starting The Project
 1. Run nodeodm docker container
 ```bash
@@ -12,3 +12,13 @@ docker-compose up -d
 ```
 3. Troubleshooting
     If you are using Linux/Ubuntu and running docker need sudo access, please refere to any tutorial to register your curretn user as part of docker usergroup
+
+# Advance Usage (CLI)
+1. Do ODM on specific folder of dataset
+```bash
+./run_odm.sh datasets/
+```
+2. Make UR take pictures
+```bash
+python3 ur.py
+```

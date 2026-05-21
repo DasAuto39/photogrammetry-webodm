@@ -229,20 +229,6 @@ def run_pipeline():
 # ======================
 # ROUTES CONTROL
 # ======================
-@app.route("/api/start_robot", methods=["POST"])
-def start_robot():
-    log_path = LOG_DIR / f"robot_{now_tag()}.log"
-
-    launch_process(
-        "robot",
-        "Robot",
-        ["python3", str(PROJECT_ROOT / "ur.py")],
-        PROJECT_ROOT,
-        log_path
-    )
-
-    return jsonify({"status": "started"})
-
 def clear_datasets_dir():
     if DATASETS_DIR.exists():
         for item in DATASETS_DIR.iterdir():
@@ -255,6 +241,22 @@ def clear_datasets_dir():
                 print(f"Gagal menghapus {item}: {e}")
     else:
         DATASETS_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.route("/api/start_robot", methods=["POST"])
+def start_robot():
+    log_path = LOG_DIR / f"robot_{now_tag()}.log"
+
+    clear_datasets_dir()
+
+    launch_process(
+        "robot",
+        "Robot",
+        ["python3", str(PROJECT_ROOT / "ur.py")],
+        PROJECT_ROOT,
+        log_path
+    )
+
+    return jsonify({"status": "started"})
 
 @app.route("/api/start_odm", methods=["POST"])
 def start_odm():
