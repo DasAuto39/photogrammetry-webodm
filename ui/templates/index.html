@@ -197,6 +197,7 @@
       <div class="actions">
         <button class="primary" id="btnRunAll">Run All</button>
         <button class="success" id="btnRobot">Start Robot</button>
+        <input type="file" id="odmFilesInput" multiple accept=".zip,image/*" style="display: none;">
         <button class="warn" id="btnODM">Start ODM</button>
         <button id="btnRefresh">Refresh Status</button>
         <button class="danger" id="btnStop">Stop</button>
@@ -480,9 +481,49 @@
       await refreshStatus();
     };
 
-    document.getElementById('btnODM').onclick = async () => {
-      await fetchJSON('/api/start_odm', { method: 'POST' });
-      await refreshStatus();
+    const odmFilesInput = document.getElementById('odmFilesInput');
+    const btnODM = document.getElementById('btnODM');
+
+    // Ketika tombol Start ODM ditekan, klik input file tersembunyi
+    btnODM.onclick = () => {
+      odmFilesInput.click();
+    };
+
+    // Ketika user selesai memilih file, kirim menggunakan FormData
+    odmFilesInput.onchange = async () => {
+      const files = odmFilesInput.files;
+      if (files.length === 0) return;
+
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      // Berikan indikasi visual ke user bahwa upload sedang berjalan
+      const originalText = btnODM.textContent;
+      btnODM.textContent = "Uploading...";
+      btnODM.disabled = true;
+
+      try {
+        const res = await fetch('/api/start_odm', {
+          method: 'POST',
+          body: formData // Fetch otomatis mengatur Content-Type menjadi multipart/form-data
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+        
+        alert("Upload berhasil, ODM dimulai!");
+        await refreshStatus();
+      } catch (err) {
+        console.error(err);
+        alert(`Gagal menjalankan ODM: ${err.message}`);
+      } finally {
+        // Kembalikan keadaan tombol dan reset input file
+        btnODM.textContent = originalText;
+        btnODM.disabled = false;
+        odmFilesInput.value = ''; 
+      }
     };
 
     document.getElementById('btnStop').onclick = async () => {

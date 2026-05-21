@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # NodeODM Auto Runner
 # ============================================================================
 
-NODE_HOST="${NODE_HOST:-localhost}"
+NODE_HOST="${NODE_HOST:-0.0.0.0}"
 NODE_PORT="${NODE_PORT:-3000}"
 NODE_URL="http://${NODE_HOST}:${NODE_PORT}"
 
@@ -142,7 +142,7 @@ check_dependencies() {
 
 check_node_connection() {
     local info
-
+    log_err "DEBUG: Memeriksa NODE_URL -> '${NODE_URL}'"
     if ! info=$(curl -fsS "${NODE_URL}/info"); then
         log_err "Cannot connect to NodeODM at ${NODE_URL}"
         exit 1

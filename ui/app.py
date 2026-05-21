@@ -1,5 +1,6 @@
 from __future__ import annotations
-
+import shutil
+import zipfile
 from flask import Flask, abort, jsonify, render_template, request, send_file, send_from_directory
 from flask_cors import CORS
 import glob
@@ -242,11 +243,67 @@ def start_robot():
 
     return jsonify({"status": "started"})
 
+def clear_datasets_dir():
+    if DATASETS_DIR.exists():
+        for item in DATASETS_DIR.iterdir():
+            try:
+                if item.is_file() or item.is_symlink():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
+            except Exception as e:
+                print(f"Gagal menghapus {item}: {e}")
+    else:
+        DATASETS_DIR.mkdir(parents=True, exist_ok=True)
 
 @app.route("/api/start_odm", methods=["POST"])
 def start_odm():
-    log_path = LOG_DIR / f"odm_{now_tag()}.log"
+    # 1. Validasi keberadaan file di request
+    if 'files' not in request.files:
+        return jsonify({"status": "failed", "error": "Tidak ada file yang diunggah"}), 400
+    
+    uploaded_files = request.files.getlist('files')
+    
+    if not uploaded_files or uploaded_files[0].filename == '':
+        return jsonify({"status": "failed", "error": "File kosong atau tidak terpilih"}), 400
 
+    # 2. Reset folder dataset (Hapus sesi lama)
+    clear_datasets_dir()
+
+    # 3. Simpan dan tangani ekstraksi
+    for file in uploaded_files:
+        filename = file.filename
+        if not filename:
+            continue
+            
+        safe_filename = Path(filename).name
+        target_path = DATASETS_DIR / safe_filename
+        
+        file.save(str(target_path))
+        
+        if safe_filename.lower().endswith('.zip'):
+            try:
+                with zipfile.ZipFile(target_path, 'r') as zip_ref:
+                    for member in zip_ref.infolist():
+                        if member.is_dir():
+                            continue
+                        
+                        member_filename = Path(member.filename).name
+                        
+                        if member_filename.startswith('.') or not member_filename:
+                            continue
+                        
+                        target_file_path = DATASETS_DIR / member_filename
+                        
+                        with zip_ref.open(member) as source, open(target_file_path, "wb") as target:
+                            shutil.copyfileobj(source, target)
+                            
+                target_path.unlink()
+                
+            except zipfile.BadZipFile:
+                return jsonify({"status": "failed", "error": f"File zip rusak: {safe_filename}"}), 400
+                        
+    log_path = LOG_DIR / f"odm_{now_tag()}.log"
     launch_process(
         "odm",
         "ODM",
