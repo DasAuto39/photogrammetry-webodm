@@ -32,3 +32,17 @@ Have docker installed
     ```bash
     docker-compose up -d
     ```
+
+# ODM Options
+To experiment with combinations of ODM options, you can edit file run_odm.sh
+| Option Name | Alternative / Supported Values | Description |
+| :--- | :--- | :--- |
+| **`feature-quality`** | `"ultra"`, `"highest"`, `"high"`, `"medium"`, `"low"`, `"lowest"` | Image feature detection quality level. |
+| **`min-num-features`** | Positive integer (Default: `10000`, e.g., `4000`, `8000`, `16000`) | Minimum number of keypoints to extract per image. |
+| **`matcher-type`** | `"flann"`, `"bruteforce"`, `"bow"` | The algorithm used for matching features between images. |
+| **`mesh-octree-depth`** | Integer from `1` to `14` (Default: `9`) | Density and detail level of the 3D mesh structure. |
+| **`mesh-size`** | Positive integer (e.g., `100000`, `200000`, `400000`) | Maximum vertex/polygon count limit for the mesh. |
+| **`use-3dmesh`** | `true`, `false` | Enables or disables the generation of a 3D mesh model. |
+| **`pc-quality`** | `"ultra"`, `"high"`, `"medium"`, `"low"`, `"lowest"` | Point cloud density and generation quality. |
+| **`ignore-gsd`** | `true`, `false` | Bypasses the default GSD limit to process photos at full resolution. |
+| **`bg-removal`** | `true`, `false` | Automatically detects and removes sky/horizon backgrounds. |
