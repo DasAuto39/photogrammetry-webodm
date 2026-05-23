@@ -1,40 +1,75 @@
-# Requirements
-Have docker installed
+# NodeODM based 3D Photogrametry
+- [Requirements](#requirements)
+- [Quickstart](#quickstart)
+- [Functionality](#functionality)
+- [Example Results](#example-results)
+- [Advance Usage](#advance-usage-cli)
+- [ODM Options](#odm-options)
 
-# Quickstart
+## Requirements
+To use this project, you only need to have **Docker** installed
+
+## Quickstart
 1. Run nodeodm docker container
-    ```bash
-    docker run -it -d -p 3000:3000 --name nodeodm opendronemap/nodeodm --network host
-    ```
+   ```bash
+   docker run -it -d -p 3000:3000 --name nodeodm opendronemap/nodeodm --network host
+   ```
 2. Run application docker container
-    ```bash
-    docker run -d --name robot-perception --network host -v ./datasets:/app/datasets -v ./output:/app/output ghcr.io/anisamsrh/persepsi-robot:latest
-    ```
+   ```bash
+  
+   docker run -d --name robot-perception --network host -v ./datasets:/app/datasets -v ./output:/app/output ghcr.io/anisamsrh/persepsi-robot:latest
+   ```
 3. Quick Troubleshooting : \
-    If you are using Linux/Ubuntu and running docker need sudo access, please refere to any tutorial to register your curret user as part of docker usergroup
+   If you are using Linux/Ubuntu and running docker need sudo access, please refere to any tutorial to register your curret user as part of docker usergroup
 
-# Advance Usage (CLI)
+## Functionality
+1. Convert dataset into 3D model object representation
+   > **FUNCTION** : START_ODM \
+   **INPUT** : Files of dataset or 1 .zip file \
+   **OUTPUT** : .obj file ready to be viewed on the web
+2. Run full pipeline
+   > **FUNCTION** : RUN_ALL \
+   **INPUT** : None \
+   **OUTPUT** : .obj file ready to be viewed
+
+3. Take dataset using UR Robotic Arm
+   > **FUNCTION** : START_ROBOT \
+   **INPUT** : None \
+   **OUTPUT** : img files
+
+   <mark>Please SAVE THE IMGS TO ANOTHER DIRECTORY. As of now, we haven't implemented auto download to local</mark>
+
+## Example Results
+The datasets were taken by UR Robotic Arm and saved beforehand.
+
+![Dataset](assets/dataset.png)
+
+Using, START_ODM, we convert the dataset into .obj below:
+
+![Result](assets/results.png)
+
+## Advance Usage (CLI)
 1. Make Robot UR take pictures
-    ```bash
-    python3 ur.py
-    ```
+   ```bash
+   python3 ur.py
+   ```
 
 2. Do ODM on specific folder of dataset
-    ```bash
-    ./run_odm.sh datasets/
-    ```
+   ```bash
+   ./run_odm.sh datasets/
+   ```
 
 3. Build the docker image yourself
-    ```bash
-    docker-compose up -d --build
-    ```
-    and run it
-    ```bash
-    docker-compose up -d
-    ```
+   ```bash
+   docker-compose up -d --build
+   ```
+   or run it
+   ```bash
+   docker-compose up -d
+   ```
 
-# ODM Options
-To experiment with combinations of ODM options, you can edit file run_odm.sh
+## ODM Options
+To experiment with combinations of ODM options, you can edit file **run_odm.sh**
 | Option Name | Alternative / Supported Values | Description |
 | :--- | :--- | :--- |
 | **`feature-quality`** | `"ultra"`, `"highest"`, `"high"`, `"medium"`, `"low"`, `"lowest"` | Image feature detection quality level. |
