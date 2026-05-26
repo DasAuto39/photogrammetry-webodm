@@ -20,7 +20,7 @@ CAMERA_ID = 1
 
 # buka kamera SEKALI
 # cap = cv2.VideoCapture(CAMERA_ID, cv2.CAP_V4L2)
-cap = cv2.VideoCapture("/dev/v4l/by-id/usb-FEC_NYK_NEMESIS_202001010001-video-index0", cv2.CAP_V4L2)
+cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     
 if not cap.isOpened():
     raise Exception("[ERROR] Kamera gagal dibuka")

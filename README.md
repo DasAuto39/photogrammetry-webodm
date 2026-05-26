@@ -14,10 +14,19 @@ To use this project, you only need to have **Docker** installed
    ```bash
    docker run -it -d -p 3000:3000 --name nodeodm opendronemap/nodeodm --network host
    ```
-2. Run application docker container
+2. Run application docker container \
+   <mark>**[IMPORTANT]**</mark> set NODE_HOST to ip address of the computer running NodeODM
    ```bash
-  
-   docker run -d --name robot-perception --network host -v ./datasets:/app/datasets -v ./output:/app/output ghcr.io/anisamsrh/persepsi-robot:latest
+   docker run -d \
+   -e NODE_HOST=192.168.200.38 \
+   -e NODE_PORT=6969 \
+   --name robot-perception \
+   --device /dev/v4l/by-id/usb-FEC_NYK_NEMESIS_202001010001-video-index0:/dev/video0 \
+   --network host \
+   -v "$(pwd)/datasets:/app/datasets" \
+   -v "$(pwd)/output:/app/output" \
+   --group-add video \
+   ghcr.io/anisamsrh/persepsi-robot:latest
    ```
 3. Quick Troubleshooting : \
    If you are using Linux/Ubuntu and running docker need sudo access, please refere to any tutorial to register your curret user as part of docker usergroup
