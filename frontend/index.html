@@ -293,6 +293,14 @@
     const modelsSelect = document.getElementById('models');
     const selectedModel = document.getElementById('selectedModel');
 
+    // Variable backend URL (akan diisi oleh Docker script)
+    const BACKEND_URL = "REPLACE_ME_BACKEND_URL";
+
+    function getApiUrl(path) {
+      let base = BACKEND_URL.trim().replace(/\/+$/, '');
+      return base + path;
+    }
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1220);
 
@@ -362,7 +370,8 @@
       currentModel = null;
     }
 
-    async function fetchJSON(url, options = {}) {
+    async function fetchJSON(path, options = {}) {
+      const url = getApiUrl(path);
       const res = await fetch(url, options);
       if (!res.ok) throw new Error(`${url} -> ${res.status}`);
       return res.json();
@@ -400,7 +409,7 @@
         const baseFolder = path.substring(0, path.lastIndexOf('/'));
 
         const mtlLoader = new MTLLoader();
-        mtlLoader.setPath(`/api/files/${baseFolder}/`);
+        mtlLoader.setPath(getApiUrl(`/api/files/${baseFolder}/`));
 
         const objName = path.split('/').pop().replace('.obj', '.mtl');
 
@@ -411,7 +420,7 @@
             const objLoader = new OBJLoader();
             objLoader.setMaterials(materials);
 
-            objLoader.load(`/api/model?path=${encodeURIComponent(path)}`, (obj) => {
+            objLoader.load(getApiUrl(`/api/model?path=${encodeURIComponent(path)}`), (obj) => {
 
             currentModel = obj;
             scene.add(obj);
@@ -434,7 +443,7 @@
 
       if (lower.endsWith('.glb') || lower.endsWith('.gltf')) {
         const loader = new GLTFLoader();
-        loader.load(`/api/model?path=${encodeURIComponent(path)}`, gltf => {
+        loader.load(getApiUrl(`/api/model?path=${encodeURIComponent(path)}`), gltf => {
           currentModel = gltf.scene;
           scene.add(gltf.scene);
           const box = new THREE.Box3().setFromObject(gltf.scene);
@@ -505,7 +514,7 @@
       btnODM.disabled = true;
 
       try {
-        const res = await fetch('/api/start_odm', {
+        const res = await fetch(getApiUrl('/api/start_odm'), {
           method: 'POST',
           body: formData // Fetch otomatis mengatur Content-Type menjadi multipart/form-data
         });

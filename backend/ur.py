@@ -3,11 +3,13 @@ import time
 import cv2
 import os
 import json
+import signal
+import sys
 
 global id_frame
 id_frame = 0
 
-ESP32_IP = "http://192.168.200.219"
+ESP32_IP = os.getenv("ESP32_IP", "http://192.168.200.219")
 SAVE_DIR = "datasets"
 
 if not os.path.exists(SAVE_DIR):
@@ -137,6 +139,15 @@ def take_photo_opencv():
 
 def main():
     print("Program dimulai...")
+
+    def handle_sigterm(signum, frame):
+        print("\n[INFO] Menerima sinyal stop (SIGTERM). Membersihkan kamera...")
+        if 'cap' in globals() and cap.isOpened():
+            cap.release()
+        cv2.destroyAllWindows()
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
 
     # bersihkan folder
     for f in os.listdir(SAVE_DIR):

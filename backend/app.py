@@ -14,7 +14,7 @@ from pathlib import Path
 # PATH CONFIG
 # ======================
 BASE_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BASE_DIR.parent
+PROJECT_ROOT = BASE_DIR
 
 OUTPUT_DIR = PROJECT_ROOT / "output"
 DATASETS_DIR = PROJECT_ROOT / "datasets"
@@ -351,7 +351,7 @@ def stop_all():
 # ======================
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return jsonify({"status": "ok", "message": "Presepsi Photogrammetry Backend API is running"})
 
 
 # if __name__ == "__main__":
