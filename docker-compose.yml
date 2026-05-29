@@ -7,8 +7,6 @@ services:
     container_name: pr-frontend
     ports:
       - "80:80"
-    environment:
-      - BACKEND_URL=http://localhost:5000
     restart: unless-stopped
 
   backend:
